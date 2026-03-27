@@ -1,0 +1,1470 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OKX Quant Agent</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <div class="auth-overlay hidden" id="auth-overlay">
+      <div class="auth-panel">
+        <p class="kicker">Secure Access</p>
+        <h2>输入访问密码</h2>
+        <p class="auth-copy">这个控制台已经启用整站门禁。输入配置好的访问密码后，才能进入首页并加载策略、账户、新闻和自动化功能。</p>
+        <div class="field-group">
+          <label for="auth-password-input">访问密码</label>
+          <input id="auth-password-input" type="password" placeholder="请输入页面访问密码" />
+        </div>
+        <div class="editor-actions">
+          <button id="auth-login-btn" type="button">进入系统</button>
+        </div>
+        <p id="auth-status" class="auth-status">正在检查访问状态...</p>
+      </div>
+    </div>
+    <main class="board">
+      <header class="masthead">
+        <div class="brand">
+          <div class="brand-mark">QX</div>
+          <div class="brand-copy">
+            <p class="kicker">Autonomous Trading Console</p>
+            <h1>OKX Quant Agent</h1>
+            <div class="system-status">
+              <span class="status-dot"></span>
+              <span>System Online</span>
+              <span class="runtime-pill runtime-pill-demo" id="runtime-mode-pill">demo</span>
+            </div>
+          </div>
+        </div>
+        <nav class="topnav">
+          <div class="nav-group">
+            <span class="nav-group-label">主功能</span>
+            <div class="nav-cluster-label-row">
+              <span class="nav-cluster-label nav-cluster-label-check">检查</span>
+              <span class="nav-cluster-label nav-cluster-label-execute">执行</span>
+              <span class="nav-cluster-label nav-cluster-label-settings">设置</span>
+            </div>
+            <div class="nav-group-row nav-group-row-flat">
+              <button type="button" class="nav-btn nav-tab active" data-view="overview">总览</button>
+              <button type="button" class="nav-btn nav-tab" data-view="account">账户</button>
+              <button type="button" class="nav-btn nav-tab" data-view="health">自检</button>
+              <button type="button" class="nav-btn nav-tab" data-view="strategies">策略</button>
+              <button type="button" class="nav-btn nav-tab nav-btn-group-break" data-view="backtest">回测</button>
+              <button type="button" class="nav-btn nav-tab" data-view="orders">订单</button>
+              <button type="button" class="nav-btn nav-tab nav-btn-group-break" data-view="config">配置</button>
+              <button type="button" class="nav-btn nav-tab" data-view="data">数据源</button>
+              <button id="open-tool-hub-btn" type="button" class="nav-btn">打开工具</button>
+            </div>
+          </div>
+        </nav>
+      </header>
+
+      <section class="page-view active" id="view-overview">
+      <section class="hero-strip">
+        <article class="hero-card">
+          <span class="hero-label">Execution Mode</span>
+          <strong id="hero-execution-mode">--</strong>
+          <small id="hero-execution-detail">策略引擎 / 风控 / 执行联动</small>
+        </article>
+        <article class="hero-card">
+          <span class="hero-label">Signal Confidence</span>
+          <strong id="hero-confidence">--</strong>
+          <small>由 Agent 与策略分析联合生成</small>
+        </article>
+        <article class="hero-card">
+          <span class="hero-label">Portfolio State</span>
+          <strong id="hero-asset">--</strong>
+          <small>实时资产快照</small>
+        </article>
+        <article class="hero-card">
+          <span class="hero-label">Risk Guard</span>
+          <strong id="hero-risk">--</strong>
+          <small>订单执行前自动风控校验</small>
+        </article>
+      </section>
+
+      <section class="top-grid">
+        <article class="panel strategy-panel">
+          <div class="panel-head">
+            <h2>当前操作策略 <span class="feature-badge feature-badge-auto">自动使用 LLM</span></h2>
+            <div class="panel-actions">
+              <select id="strategy-select">
+                <option value="sma_crossover">sma_crossover</option>
+                <option value="mean_reversion">mean_reversion</option>
+              </select>
+            </div>
+          </div>
+          <div class="section-block">
+            <p class="label">当前操作策略:</p>
+            <div class="strategy-name" id="current-strategy-name">sma_crossover</div>
+            <ul class="strategy-details" id="strategy-details">
+              <li>等待后端分析结果...</li>
+            </ul>
+          </div>
+
+          <div class="section-block">
+            <p class="label">技术指标看板</p>
+            <dl class="metrics-list ta-metrics-list" id="ta-metrics-overview">
+              <div><dt>SMA</dt><dd>--</dd></div>
+              <div><dt>EMA</dt><dd>--</dd></div>
+              <div><dt>RSI</dt><dd>--</dd></div>
+              <div><dt>MACD</dt><dd>--</dd></div>
+              <div><dt>BOLL</dt><dd>--</dd></div>
+              <div><dt>ATR / VOL-MA</dt><dd>--</dd></div>
+            </dl>
+          </div>
+
+          <div class="section-block create-block">
+            <p class="label">策略编辑器</p>
+            <div class="editor-summary">
+              <p>新增策略和编辑当前策略已切换为弹窗模式，字段会附带参数说明，避免只看到输入框不清楚用途。</p>
+            </div>
+            <div class="editor-actions">
+              <button id="open-create-modal-btn" type="button">新增策略</button>
+              <button id="open-edit-modal-btn" type="button">编辑当前策略</button>
+            </div>
+          </div>
+
+          <div class="section-block history-block">
+            <p class="label">历史策略</p>
+            <ol class="history-list">
+              <li><span>mean_reversion</span><span>创建时间：2026-05-05 18:00:00</span></li>
+              <li><span>sma_crossover</span><span>创建时间：2026-05-05 18:00:00</span></li>
+            </ol>
+          </div>
+        </article>
+
+        <article class="panel trade-panel">
+          <div class="panel-head">
+            <h2>交易记录墙</h2>
+            <div class="panel-actions panel-actions-segmented">
+              <button id="analyze-btn" type="button" class="action-btn action-btn-secondary">刷新分析</button>
+              <button id="trade-btn" type="button" class="action-btn action-btn-primary">手动执行下单</button>
+            </div>
+          </div>
+          <ol class="trade-list" id="trade-list">
+            <li>1、等待交易数据...</li>
+            <li>2、等待交易数据...</li>
+          </ol>
+        </article>
+
+        <article class="panel metrics-panel">
+          <h2>核心数据看板</h2>
+          <div class="mini-stat-row">
+            <div class="mini-stat">
+              <span>Current Strategy</span>
+              <strong id="mini-strategy">--</strong>
+            </div>
+            <div class="mini-stat">
+              <span>Signal</span>
+              <strong id="mini-signal">--</strong>
+            </div>
+            <div class="mini-stat">
+              <span>Yield</span>
+              <strong id="mini-yield">--</strong>
+            </div>
+          </div>
+          <div class="progress-wrap">
+            <div class="progress-bar">
+              <div class="progress-fill progress-fill-loading" id="progress-fill">--</div>
+            </div>
+            <p class="progress-label">目标进度条</p>
+            <div class="mini-stat-row progress-summary-row">
+              <div class="mini-stat">
+                <span>当前资金</span>
+                <strong id="progress-current-capital">--</strong>
+              </div>
+              <div class="mini-stat">
+                <span>目标资金</span>
+                <strong id="progress-target-capital">--</strong>
+              </div>
+              <div class="mini-stat">
+                <span>资金差额</span>
+                <strong id="progress-capital-gap">--</strong>
+              </div>
+              <div class="mini-stat">
+                <span>周期剩余</span>
+                <strong id="progress-days-remaining">--</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="metrics-group">
+            <p class="label">账户实时</p>
+            <dl class="metrics-list">
+              <div>
+                <dt>当前总资产：</dt>
+                <dd id="total-asset">--</dd>
+              </div>
+              <div>
+                <dt>币种资产：</dt>
+                <dd id="coin-asset">--</dd>
+              </div>
+              <div>
+                <dt>收益率</dt>
+                <dd id="yield-rate">--</dd>
+              </div>
+            </dl>
+            <table class="asset-table">
+              <thead>
+                <tr>
+                  <th>币种</th>
+                  <th>总量</th>
+                  <th>可用</th>
+                </tr>
+              </thead>
+              <tbody id="asset-table-body">
+                <tr>
+                  <td colspan="3">等待账户数据...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="metrics-group">
+            <p class="label">历史走势：</p>
+            <div class="trend-box">
+              <div class="chart-overlay">
+                <span id="trend-chart-label">Market Trend</span>
+                <strong id="trend-chart-title">Loading...</strong>
+              </div>
+              <svg id="trend-chart" viewBox="0 0 520 160" preserveAspectRatio="none"></svg>
+            </div>
+            <p class="chart-caption">基于最近行情数据绘制的趋势图</p>
+          </div>
+        </article>
+      </section>
+
+      <section class="bottom-panel panel">
+        <h2>外部热点信息源</h2>
+        <div class="news-status-bar">
+          <span id="news-refresh-policy">更新方式：每 10 分钟自动刷新，也可手动刷新</span>
+          <span id="news-last-refresh">上次刷新：未刷新</span>
+          <span id="news-next-refresh">下次刷新：待启动</span>
+          <span id="news-current-status">当前状态：未选择</span>
+          <span id="news-switch-status">切换状态：等待选择</span>
+        </div>
+        <div class="source-row" id="source-row"></div>
+          <div class="intel-layout">
+          <div class="daily-report" id="daily-report">
+            <div class="daily-report-head">
+              <div>
+                <h3>每日日报</h3>
+                <span id="daily-report-date">--</span>
+              </div>
+              <div class="panel-actions">
+                <div class="daily-report-tabs" id="daily-report-tabs">
+                  <button id="daily-report-tab-report" type="button" class="ghost-btn active">每日日报</button>
+                  <button id="daily-report-tab-summary" type="button" class="ghost-btn">策略总结</button>
+                </div>
+                <button id="export-report-btn" type="button" class="ghost-btn">导出日报</button>
+              </div>
+            </div>
+            <div class="daily-report-scroll">
+              <div class="daily-report-grid" id="daily-report-body">
+                <article class="report-card">
+                  <h4>市场摘要</h4>
+                  <p>等待日报生成...</p>
+                </article>
+              </div>
+              <div class="daily-report-grid hidden" id="daily-summary-body">
+                <article class="report-card">
+                  <h4>每日策略总结</h4>
+                  <p>等待每日总结生成...</p>
+                </article>
+              </div>
+            </div>
+          </div>
+          <div class="news-panel">
+            <div class="news-panel-head">
+              <div>
+                <h3>新闻内容</h3>
+                <span id="news-panel-subtitle">来自所选信息源的滚动资讯</span>
+              </div>
+            </div>
+            <div class="news-scroll">
+              <div class="source-content" id="source-content">
+                <article class="source-card">
+                  <h3>热点摘要</h3>
+                  <p>等待新闻检索与外部数据接入。</p>
+                </article>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      </section>
+
+      <section class="page-view" id="view-strategies">
+        <div class="subpage-grid">
+          <article class="panel">
+            <div class="panel-head">
+              <h2>策略管理</h2>
+              <div class="panel-actions">
+                <button id="open-create-modal-btn-page" type="button">新增策略</button>
+                <button id="open-edit-modal-btn-page" type="button">编辑当前策略</button>
+              </div>
+            </div>
+            <div class="field-group">
+              <label for="strategy-select-page">当前策略</label>
+              <select id="strategy-select-page">
+                <option value="sma_crossover">sma_crossover</option>
+                <option value="mean_reversion">mean_reversion</option>
+                <option value="news_sentiment">news_sentiment</option>
+              </select>
+            </div>
+            <div class="section-block">
+              <p class="label">策略摘要</p>
+              <ul class="strategy-details" id="strategy-details-page">
+                <li>等待分析结果...</li>
+              </ul>
+            </div>
+          </article>
+          <article class="panel">
+            <div class="panel-head">
+              <h2>历史策略</h2>
+            </div>
+            <ol class="history-list" id="history-list-page">
+              <li><span>等待数据...</span></li>
+            </ol>
+          </article>
+          <article class="panel">
+            <div class="panel-head">
+              <h2>技术指标</h2>
+            </div>
+            <dl class="metrics-list ta-metrics-list" id="ta-metrics-page">
+              <div><dt>SMA</dt><dd>--</dd></div>
+              <div><dt>EMA</dt><dd>--</dd></div>
+              <div><dt>RSI</dt><dd>--</dd></div>
+              <div><dt>MACD</dt><dd>--</dd></div>
+              <div><dt>BOLL</dt><dd>--</dd></div>
+              <div><dt>ATR / VOL-MA</dt><dd>--</dd></div>
+            </dl>
+          </article>
+          <article class="panel">
+            <div class="panel-head">
+              <h2>策略诊断</h2>
+            </div>
+            <div class="mini-stat-row">
+              <div class="mini-stat">
+                <span>Signal Score</span>
+                <strong id="strategy-score-page">--</strong>
+              </div>
+              <div class="mini-stat">
+                <span>Agent</span>
+                <strong id="strategy-agent-page">--</strong>
+              </div>
+              <div class="mini-stat">
+                <span>Risk</span>
+                <strong id="strategy-risk-page">--</strong>
+              </div>
+            </div>
+            <textarea id="strategy-diagnostics-output" class="prompt-editor" readonly>等待策略分析诊断结果。</textarea>
+          </article>
+          <article class="panel">
+            <div class="panel-head">
+              <h2>执行记录</h2>
+              <div class="panel-actions panel-actions-segmented">
+                <button id="analyze-btn-page" type="button" class="action-btn action-btn-secondary">刷新分析</button>
+                <button id="trade-btn-page" type="button" class="action-btn action-btn-primary">模拟下单</button>
+              </div>
+            </div>
+            <ol class="trade-list" id="trade-list-page">
+              <li>等待交易数据...</li>
+            </ol>
+          </article>
+        </div>
+      </section>
+
+      <section class="page-view" id="view-backtest">
+        <div class="subpage-grid subpage-grid-two">
+          <article class="panel">
+            <div class="panel-head">
+              <h2>回测配置</h2>
+            </div>
+            <div class="editor-summary compact">
+              <p>回测会用历史行情模拟“如果过去按这套策略执行，会得到怎样的收益和回撤”。它不会真实下单，适合先验证思路，再决定要不要继续观察或实盘。</p>
+            </div>
+            <form id="backtest-form" class="inline-form">
+              <div class="field-group">
+                <label for="backtest-symbol">交易对</label>
+                <input id="backtest-symbol" type="text" value="BTC-USDT-SWAP" />
+              </div>
+              <div class="field-group">
+                <label for="backtest-timeframe">周期</label>
+                <input id="backtest-timeframe" type="text" value="1h" />
+              </div>
+              <div class="field-group">
+                <label for="backtest-strategy">策略</label>
+                <select id="backtest-strategy"></select>
+              </div>
+              <div class="field-group">
+                <label for="backtest-capital">初始资金</label>
+                <input id="backtest-capital" type="number" value="10000" min="100" step="100" />
+              </div>
+              <div class="field-group">
+                <label for="backtest-bars">K 线数量</label>
+                <input id="backtest-bars" type="number" value="120" min="30" max="1000" step="10" />
+                <small>K 线数量越大，覆盖历史越久，但回测时间也会更长。建议先从 120 到 300 根开始。</small>
+              </div>
+              <div class="field-group">
+                <label for="backtest-save-label">保存回测名称</label>
+                <input id="backtest-save-label" type="text" placeholder="例如 SOL 1h / v1 / 20天验证" />
+                <small>建议带上交易对、周期、策略名和测试场景，后面对比时更容易认出来。</small>
+              </div>
+              <div class="editor-summary compact">
+                <p>推荐顺序：先运行回测，再看右侧“结果解读”，确认收益、回撤和胜率是否能接受，最后再保存这次结果用于后续对比。</p>
+              </div>
+              <div class="editor-actions">
+                <button id="run-backtest-btn" type="submit">运行回测</button>
+                <button id="save-backtest-btn" type="button">保存本次回测</button>
+                <button id="refresh-backtest-runs-btn" type="button">刷新历史回测</button>
+              </div>
+            </form>
+            <article class="report-card backtest-history-panel">
+              <h4>历史回测记录</h4>
+              <p class="backtest-history-help">这里会显示你已经保存的回测。可以直接删掉不需要的记录，也可以把某条结果放到右侧做 A/B 对比。</p>
+              <div id="backtest-history-list" class="backtest-history-list">
+                <p class="backtest-history-empty">还没有保存的回测记录。</p>
+              </div>
+            </article>
+          </article>
+          <article class="panel">
+            <div class="panel-head">
+              <h2>回测结果</h2>
+            </div>
+            <div class="mini-stat-row">
+              <div class="mini-stat">
+                <span>总收益率</span>
+                <strong id="backtest-return">--</strong>
+              </div>
+              <div class="mini-stat">
+                <span>成交次数</span>
+                <strong id="backtest-trades">--</strong>
+              </div>
+              <div class="mini-stat">
+                <span>胜率</span>
+                <strong id="backtest-winrate">--</strong>
+              </div>
+            </div>
+            <div class="mini-stat-row">
+              <div class="mini-stat">
+                <span>最大回撤</span>
+                <strong id="backtest-drawdown">--</strong>
+              </div>
+              <div class="mini-stat">
+                <span>收益质量</span>
+                <strong id="backtest-sharpe">--</strong>
+              </div>
+              <div class="mini-stat">
+                <span>手续费</span>
+                <strong id="backtest-fees">--</strong>
+              </div>
+            </div>
+            <div class="editor-summary compact">
+              <p>总收益率看最终赚没赚钱；最大回撤看中途最多亏过多少；收益质量越高越稳。先别只盯着收益，回撤和收益质量同样重要。</p>
+            </div>
+            <div class="trend-box backtest-chart-box">
+              <div class="chart-overlay">
+                <span>回测曲线</span>
+                <strong>资金变化轨迹</strong>
+              </div>
+              <svg id="backtest-curve-chart" viewBox="0 0 520 160" preserveAspectRatio="none"></svg>
+            </div>
+            <p class="chart-caption">展示回测过程中的权益曲线变化。</p>
+            <article class="report-card backtest-summary-card">
+              <h4>结果解读</h4>
+              <p id="backtest-human-summary">运行回测后，这里会用更容易理解的话解释这次结果是偏稳健、偏一般，还是风险较高。</p>
+            </article>
+            <table class="asset-table">
+              <thead>
+                <tr>
+                  <th>方向</th>
+                  <th>成交价</th>
+                  <th>手续费</th>
+                  <th>盈亏</th>
+                </tr>
+              </thead>
+              <tbody id="backtest-trades-body">
+                <tr><td colspan="4">运行回测后显示最近成交。</td></tr>
+              </tbody>
+            </table>
+            <textarea id="backtest-result-output" class="prompt-editor" readonly>点击“运行回测”查看结果。</textarea>
+            <div class="config-grid">
+              <div class="field-group">
+                <label for="backtest-compare-a">对比项 A</label>
+                <select id="backtest-compare-a"></select>
+              </div>
+              <div class="field-group">
+                <label for="backtest-compare-b">对比项 B</label>
+                <select id="backtest-compare-b"></select>
+              </div>
+            </div>
+            <div class="editor-actions">
+              <button id="compare-backtests-btn" type="button">对比两次回测</button>
+            </div>
+            <article class="report-card backtest-summary-card">
+              <h4>对比结论</h4>
+              <p id="backtest-compare-summary">保存两次以上回测后，这里会用中文说明哪次更稳、哪次收益更好，以及更适合继续跟踪。</p>
+            </article>
+            <textarea id="backtest-compare-output" class="prompt-editor" readonly>保存两次以上回测后可在这里查看对比结果。</textarea>
+          </article>
+        </div>
+      </section>
+
+      <section class="page-view" id="view-account">
+        <div class="subpage-grid subpage-grid-two">
+          <article class="panel">
+            <div class="panel-head">
+              <h2>账户总览</h2>
+              <div class="panel-actions">
+                <button id="refresh-account-btn" type="button">刷新账户</button>
+              </div>
+            </div>
+            <div class="mini-stat-row">
+              <div class="mini-stat">
+                <span>Source</span>
+                <strong id="account-source">--</strong>
+              </div>
+              <div class="mini-stat">
+                <span>Total Equity</span>
+                <strong id="account-total-equity">--</strong>
+              </div>
+              <div class="mini-stat">
+                <span>Available</span>
+                <strong id="account-available-equity">--</strong>
+              </div>
+            </div>
+            <div class="mini-stat-row">
+              <div class="mini-stat">
+                <span>Mode</span>
+                <strong id="account-mode">--</strong>
+              </div>
+              <div class="mini-stat">
+                <span>UPL</span>
+                <strong id="account-upl">--</strong>
+              </div>
+            </div>
+            <textarea id="account-status-output" class="prompt-editor" readonly>点击“刷新账户”查看账户状态。</textarea>
+          </article>
+          <article class="panel">
+            <div class="panel-head">
+              <h2>资产分布</h2>
+            </div>
+            <table class="asset-table">
+              <thead>
+                <tr>
+                  <th>资产</th>
+                  <th>权益</th>
+                  <th>可用</th>
+                  <th>UPL</th>
+                </tr>
+              </thead>
+              <tbody id="account-assets-body">
+                <tr><td colspan="4">等待账户数据...</td></tr>
+              </tbody>
+            </table>
+          </article>
+        </div>
+        <div class="subpage-grid subpage-grid-two" style="margin-top: 14px;">
+          <article class="panel">
+            <div class="panel-head">
+              <h2>持仓</h2>
+              <div class="panel-actions">
+                <button id="refresh-positions-btn" type="button">刷新持仓</button>
+              </div>
+            </div>
+            <table class="asset-table">
+              <thead>
+                <tr>
+                  <th>交易对</th>
+                  <th>方向</th>
+                  <th>数量</th>
+                  <th>开仓价</th>
+                  <th>标记价</th>
+                  <th>UPL</th>
+                </tr>
+              </thead>
+              <tbody id="positions-body">
+                <tr><td colspan="6">等待持仓数据...</td></tr>
+              </tbody>
+            </table>
+          </article>
+        </div>
+      </section>
+
+      <section class="page-view" id="view-orders">
+        <div class="subpage-grid subpage-grid-two">
+          <article class="panel">
+            <div class="panel-head">
+              <h2>挂单</h2>
+              <div class="panel-actions">
+                <button id="refresh-orders-btn" type="button">刷新订单</button>
+              </div>
+            </div>
+            <table class="asset-table">
+              <thead>
+                <tr>
+                  <th>订单号</th>
+                  <th>交易对</th>
+                  <th>方向</th>
+                  <th>类型</th>
+                  <th>数量</th>
+                  <th>状态</th>
+                </tr>
+              </thead>
+              <tbody id="pending-orders-body">
+                <tr><td colspan="6">等待订单数据...</td></tr>
+              </tbody>
+            </table>
+          </article>
+          <article class="panel">
+            <div class="panel-head">
+              <h2>历史订单</h2>
+            </div>
+            <table class="asset-table">
+              <thead>
+                <tr>
+                  <th>订单号</th>
+                  <th>交易对</th>
+                  <th>方向</th>
+                  <th>成交均价</th>
+                  <th>数量</th>
+                  <th>状态</th>
+                </tr>
+              </thead>
+              <tbody id="history-orders-body">
+                <tr><td colspan="6">等待订单数据...</td></tr>
+              </tbody>
+            </table>
+          </article>
+        </div>
+      </section>
+
+      <section class="page-view" id="view-config">
+        <div class="panel" style="margin-bottom: 14px;">
+          <div class="editor-summary compact">
+            <p id="config-runtime-status">配置页状态：等待操作</p>
+          </div>
+        </div>
+        <div class="config-page-grid">
+          <article class="panel">
+            <div class="panel-head">
+              <h2>模型配置 <span class="feature-badge feature-badge-auto">保存后自动生效</span></h2>
+              <div class="panel-actions">
+                <button id="save-runtime-config-page-btn" type="button">保存模型配置</button>
+                <button id="test-llm-connection-page-btn" type="button">测试模型连接</button>
+              </div>
+            </div>
+            <div class="runtime-grid">
+              <div class="field-group span-2">
+                <label for="config-provider-mode">聊天模型接入方式</label>
+                <select id="config-provider-mode">
+                  <option value="openai">官方 OpenAI</option>
+                  <option value="compatible">兼容 OpenAI 协议</option>
+                </select>
+              </div>
+              <div class="field-group span-2">
+                <label for="config-openai-api-key">OPENAI_API_KEY</label>
+                <input id="config-openai-api-key" type="password" placeholder="sk-..." />
+              </div>
+              <div class="field-group span-2">
+                <label for="config-app-password">页面访问密码（整站）</label>
+                <small>用户打开首页时就会先验证这个密码；留空表示不启用整站门禁。</small>
+                <input id="config-app-password" type="password" placeholder="留空表示不启用整站门禁" />
+              </div>
+              <div class="field-group">
+                <label for="config-app-session-ttl">会话有效期（分钟）</label>
+                <small>超过这个时长后，需要重新输入访问密码。</small>
+                <input id="config-app-session-ttl" type="number" min="1" max="10080" step="1" />
+              </div>
+              <div class="field-group">
+                <label for="config-llm-model">LLM_MODEL</label>
+                <input id="config-llm-model" type="text" placeholder="例如 gpt-4.1-mini" />
+              </div>
+              <div class="field-group">
+                <label for="config-llm-temperature">LLM_TEMPERATURE</label>
+                <input id="config-llm-temperature" type="number" min="0" max="2" step="0.1" />
+              </div>
+              <div class="field-group span-2 config-compatible-only">
+                <label for="config-openai-base-url">OPENAI_BASE_URL</label>
+                <input id="config-openai-base-url" type="text" placeholder="https://your-endpoint/v1" />
+              </div>
+            </div>
+          </article>
+          <article class="panel">
+            <div class="panel-head">
+              <h2>Embeddings 与 RAG</h2>
+              <div class="panel-actions">
+                <button id="test-embeddings-connection-page-btn" type="button">测试 Embeddings</button>
+              </div>
+            </div>
+            <div class="runtime-grid">
+              <div class="field-group span-2">
+                <label for="config-embeddings-enabled">是否启用 Embeddings</label>
+                <select id="config-embeddings-enabled">
+                  <option value="false">关闭，先不用 RAG 向量检索</option>
+                  <option value="true">开启，使用真实向量检索</option>
+                </select>
+              </div>
+              <div class="field-group span-2 config-embeddings-only">
+                <label for="config-embeddings-use-shared">RAG 是否复用当前模型接入</label>
+                <select id="config-embeddings-use-shared">
+                  <option value="true">是，复用当前聊天模型的 Key / URL</option>
+                  <option value="false">否，单独配置 RAG 的 Key / URL</option>
+                </select>
+              </div>
+              <div class="field-group config-embeddings-only">
+                <label for="config-embeddings-preset">Embeddings 预设</label>
+                <select id="config-embeddings-preset">
+                  <option value="text-embedding-3-small">OpenAI text-embedding-3-small（推荐）</option>
+                  <option value="text-embedding-3-large">OpenAI text-embedding-3-large</option>
+                  <option value="text-embedding-ada-002">OpenAI text-embedding-ada-002</option>
+                  <option value="custom">自定义兼容模型</option>
+                </select>
+              </div>
+              <div class="field-group span-2 config-embeddings-only config-embeddings-dedicated-only">
+                <label for="config-embeddings-api-key">RAG_API_KEY</label>
+                <small>仅当不复用当前模型接入时填写。</small>
+                <input id="config-embeddings-api-key" type="password" placeholder="用于 Embeddings / RAG 的 API Key" />
+              </div>
+              <div class="field-group span-2 config-embeddings-only config-embeddings-dedicated-only">
+                <label for="config-embeddings-base-url">RAG_BASE_URL</label>
+                <small>仅当不复用当前模型接入时填写；兼容 OpenAI 协议时填完整 `/v1` 地址。</small>
+                <input id="config-embeddings-base-url" type="text" placeholder="https://your-rag-endpoint/v1" />
+              </div>
+              <div class="field-group config-embeddings-only config-embeddings-custom-only">
+                <label for="config-embeddings-model">EMBEDDINGS_MODEL</label>
+                <input id="config-embeddings-model" type="text" placeholder="例如 text-embedding-3-small" />
+              </div>
+              <div class="field-group span-2 config-embeddings-only config-embeddings-custom-only">
+                <label for="config-openai-model">OPENAI_MODEL</label>
+                <input id="config-openai-model" type="text" placeholder="高级兼容项，可留空" />
+              </div>
+            </div>
+            <div class="metrics-list config-summary-list">
+              <div><dt>聊天模型</dt><dd id="config-llm-summary">--</dd></div>
+              <div><dt>RAG 接入</dt><dd id="config-embeddings-access-summary">--</dd></div>
+              <div><dt>Embeddings</dt><dd id="config-embeddings-summary">--</dd></div>
+              <div><dt>新闻源数量</dt><dd id="config-news-summary">--</dd></div>
+            </div>
+          </article>
+          <article class="panel">
+            <div class="panel-head">
+              <h2>OKX 接入</h2>
+              <div class="panel-actions">
+                <button id="save-okx-config-page-btn" type="button">保存 OKX 配置</button>
+                <button id="test-okx-public-page-btn" type="button">公共行情</button>
+                <button id="test-okx-private-page-btn" type="button">私有账户</button>
+              </div>
+            </div>
+            <div class="runtime-grid">
+              <div class="field-group span-2">
+                <label for="config-okx-api-key">OKX_API_KEY</label>
+                <input id="config-okx-api-key" type="password" />
+              </div>
+              <div class="field-group">
+                <label for="config-okx-api-secret">OKX_API_SECRET</label>
+                <input id="config-okx-api-secret" type="password" />
+              </div>
+              <div class="field-group">
+                <label for="config-okx-passphrase">OKX_PASSPHRASE</label>
+                <input id="config-okx-passphrase" type="password" />
+              </div>
+              <div class="field-group">
+                <label for="config-okx-rest-base">OKX_REST_BASE</label>
+                <input id="config-okx-rest-base" type="text" placeholder="https://www.okx.com" />
+              </div>
+              <div class="field-group">
+                <label for="config-okx-adapter">OKX_ADAPTER</label>
+                <select id="config-okx-adapter">
+                  <option value="native">native / 原生 OKX REST</option>
+                  <option value="ccxt">ccxt / 统一交易所适配层</option>
+                </select>
+              </div>
+              <div class="field-group">
+                <label for="config-okx-use-paper">OKX_USE_PAPER</label>
+                <select id="config-okx-use-paper">
+                  <option value="true">true</option>
+                  <option value="false">false</option>
+                </select>
+              </div>
+            </div>
+            <div class="metrics-list config-summary-list">
+              <div><dt>OKX 模式</dt><dd id="config-okx-summary">--</dd></div>
+            </div>
+          </article>
+          <article class="panel">
+            <div class="panel-head">
+              <h2>OKX 网络诊断</h2>
+              <div class="panel-actions">
+                <button id="run-okx-diagnostics-btn" type="button">执行诊断</button>
+              </div>
+            </div>
+            <div class="diagnostics-grid">
+              <div class="mini-stat">
+                <span>REST Base</span>
+                <strong id="okx-diagnostics-base">--</strong>
+              </div>
+              <div class="mini-stat">
+                <span>Mode</span>
+                <strong id="okx-diagnostics-mode">--</strong>
+              </div>
+              <div class="mini-stat">
+                <span>Public</span>
+                <strong id="okx-diagnostics-public">--</strong>
+              </div>
+              <div class="mini-stat">
+                <span>Private</span>
+                <strong id="okx-diagnostics-private">--</strong>
+              </div>
+            </div>
+            <textarea id="okx-diagnostics-output" class="prompt-editor" readonly>点击“执行诊断”查看 OKX 公共行情、私有账户和当前接入模式。</textarea>
+          </article>
+          <article class="panel">
+            <div class="panel-head">
+              <h2>自动交易与每日总结 <span class="feature-badge feature-badge-toggle">需开启自动化</span></h2>
+              <div class="panel-actions">
+                <button id="save-automation-config-btn" type="button">保存自动化配置</button>
+                <button id="test-feishu-btn" type="button">发送测试消息</button>
+                <button id="run-auto-trade-now-btn" type="button">立即执行自动交易</button>
+                <button id="run-daily-summary-now-btn" type="button">立即生成每日总结</button>
+              </div>
+            </div>
+            <div class="editor-summary compact">
+              <p>关闭时不会自动买卖；只有开启自动交易后，系统才会按周期检查策略并自动执行买入或卖出。</p>
+            </div>
+            <div class="runtime-grid">
+              <div class="field-group">
+                <label for="config-auto-trade-enabled">自动交易</label>
+                <select id="config-auto-trade-enabled">
+                  <option value="false">关闭</option>
+                  <option value="true">开启</option>
+                </select>
+              </div>
+              <div class="field-group">
+                <label for="config-auto-trade-interval">自动交易周期（分钟）</label>
+                <input id="config-auto-trade-interval" type="number" min="1" max="1440" step="1" />
+              </div>
+              <div class="field-group span-2">
+                <label for="config-auto-trade-strategies">自动交易策略</label>
+                <input id="config-auto-trade-strategies" type="text" placeholder="多个策略名用逗号分隔，留空表示全部策略" />
+              </div>
+              <div class="field-group">
+                <label for="config-auto-trade-confidence">最小置信度</label>
+                <input id="config-auto-trade-confidence" type="number" min="0" max="1" step="0.01" />
+              </div>
+              <div class="field-group">
+                <label for="config-daily-summary-enabled">每日自动总结</label>
+                <select id="config-daily-summary-enabled">
+                  <option value="false">关闭</option>
+                  <option value="true">开启</option>
+                </select>
+              </div>
+              <div class="field-group">
+                <label for="config-daily-summary-hour">每日总结小时</label>
+                <input id="config-daily-summary-hour" type="number" min="0" max="23" step="1" />
+              </div>
+              <div class="field-group span-2">
+                <label for="config-daily-summary-strategies">每日总结策略</label>
+                <input id="config-daily-summary-strategies" type="text" placeholder="多个策略名用逗号分隔，留空表示全部策略" />
+              </div>
+              <div class="field-group">
+                <label for="config-daily-summary-apply-ai-updates">AI 建议自动更新策略</label>
+                <select id="config-daily-summary-apply-ai-updates">
+                  <option value="false">关闭，保持原策略</option>
+                  <option value="true">开启，按 AI 建议更新</option>
+                </select>
+              </div>
+              <div class="field-group span-2">
+                <label for="config-feishu-webhook-url">飞书机器人 Webhook</label>
+                <input id="config-feishu-webhook-url" type="text" placeholder="https://open.feishu.cn/open-apis/bot/v2/hook/..." />
+                <small>填入群机器人的自定义 Webhook 后，就可以推送每日日报与策略总结。</small>
+              </div>
+              <div class="field-group">
+                <label for="config-feishu-push-daily-report">推送每日日报</label>
+                <select id="config-feishu-push-daily-report">
+                  <option value="true">开启</option>
+                  <option value="false">关闭</option>
+                </select>
+              </div>
+              <div class="field-group">
+                <label for="config-feishu-push-daily-summary">推送策略总结</label>
+                <select id="config-feishu-push-daily-summary">
+                  <option value="true">开启</option>
+                  <option value="false">关闭</option>
+                </select>
+              </div>
+            </div>
+            <div class="metrics-list config-summary-list">
+              <div><dt>调度器</dt><dd id="config-automation-running">--</dd></div>
+              <div><dt>自动交易</dt><dd id="config-auto-trade-summary">--</dd></div>
+              <div><dt>每日总结</dt><dd id="config-daily-summary-summary">--</dd></div>
+              <div><dt>飞书推送</dt><dd id="config-feishu-summary">--</dd></div>
+            </div>
+            <textarea id="automation-output" class="prompt-editor" readonly>这里会显示自动交易与每日总结的当前状态、最近执行结果和手动触发结果。</textarea>
+          </article>
+          <article class="panel">
+            <div class="panel-head">
+              <h2>Prompt 模板 <span class="feature-badge feature-badge-manual">预览仅测试</span></h2>
+              <div class="panel-actions">
+                <button id="save-prompt-template-page-btn" type="button">保存模板</button>
+                <button id="preview-prompt-template-page-btn" type="button">预览测试</button>
+              </div>
+            </div>
+            <div class="editor-summary compact">
+              <p>模板保存后会在对应链路自动生效；“预览测试”只是帮助你检查当前模板效果，不是启用开关。</p>
+            </div>
+            <div class="field-group">
+              <label for="config-prompt-template-select">模板名称</label>
+              <select id="config-prompt-template-select"></select>
+            </div>
+            <div class="editor-summary">
+              <p id="config-prompt-template-meta">模板说明：选择模板后会显示用途说明。</p>
+            </div>
+            <div class="field-group">
+              <label for="config-prompt-template-editor">模板内容</label>
+              <textarea id="config-prompt-template-editor" class="prompt-editor"></textarea>
+            </div>
+            <div class="field-group">
+              <label for="config-prompt-preview-output">预览结果</label>
+              <textarea id="config-prompt-preview-output" class="prompt-editor" readonly></textarea>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="page-view" id="view-data">
+        <div class="subpage-grid subpage-grid-two">
+          <article class="panel">
+            <div class="panel-head">
+              <h2>新闻源概览 <span class="feature-badge feature-badge-toggle">按源配置</span></h2>
+              <div class="panel-actions">
+                <button id="refresh-news-btn-data" type="button">刷新新闻源</button>
+                <button id="summarize-news-btn-data" type="button">生成当前源 LLM 摘要</button>
+              </div>
+            </div>
+            <div class="editor-summary compact">
+              <p>这个页面是新闻源的唯一入口，用来集中做配置、刷新、查看当前抓取状态和预览新闻内容。</p>
+            </div>
+            <div class="news-status-bar">
+              <span id="news-refresh-policy-page">更新方式：每 10 分钟自动刷新，也可手动刷新</span>
+              <span id="news-last-refresh-page">上次刷新：未刷新</span>
+            </div>
+            <div class="source-row" id="source-row-page"></div>
+          </article>
+          <article class="panel">
+            <div class="panel-head">
+              <h2>新闻源配置与状态</h2>
+              <div class="panel-actions">
+                <button id="save-news-config-data-btn" type="button">保存新闻源</button>
+              </div>
+            </div>
+            <div class="field-group">
+              <label for="data-news-source-editor">新闻源配置 JSON</label>
+              <small>这里统一管理新闻源、RSS 地址、缓存与 LLM 摘要模式，不再在配置页重复出现。</small>
+              <textarea id="data-news-source-editor" class="prompt-editor"></textarea>
+            </div>
+            <div class="field-group">
+              <label for="data-source-output">当前数据源状态</label>
+              <textarea id="data-source-output" class="prompt-editor" readonly>这里会显示当前新闻源配置和最新状态。</textarea>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="page-view" id="view-health">
+        <div class="panel" style="margin-bottom: 14px;">
+          <div class="panel-head">
+            <h2>系统自检 <span class="feature-badge feature-badge-manual">手动触发</span></h2>
+            <div class="panel-actions">
+              <select id="self-check-strategy-select">
+                <option value="sma_crossover">sma_crossover</option>
+                <option value="mean_reversion">mean_reversion</option>
+                <option value="news_sentiment">news_sentiment</option>
+              </select>
+              <button id="run-self-check-btn" type="button">运行自检</button>
+            </div>
+          </div>
+          <div class="editor-summary compact self-check-intro">
+            <p>这个页面用于一键检查当前系统的关键链路是否可用，适合在改完配置、准备验证策略、或准备部署前先跑一遍。</p>
+          </div>
+          <div class="editor-summary compact">
+            <p id="self-check-status">系统状态：等待首次自检</p>
+          </div>
+          <div class="self-check-summary-grid">
+            <article class="guide-card">
+              <h3>本次结论</h3>
+              <p id="self-check-summary">还没有运行过自检。建议先选中策略，再执行一次。</p>
+            </article>
+            <article class="guide-card">
+              <h3>建议动作</h3>
+              <ul class="guide-list" id="self-check-recommendations">
+                <li>先点击“运行自检”，系统会逐项检查模型、新闻、看板、回测、OKX 和 Prompt 预览。</li>
+              </ul>
+            </article>
+          </div>
+          <div class="self-check-guide-grid">
+            <article class="guide-card">
+              <h3>自检什么</h3>
+              <ul class="guide-list">
+                <li><strong>LLM</strong>：模型账号、模型名和接口地址是否可正常调用。</li>
+                <li><strong>新闻源</strong>：RSS 新闻源是否能刷新、缓存或回退。</li>
+                <li><strong>看板快照</strong>：总览页所需的聚合数据是否能生成。</li>
+                <li><strong>回测</strong>：当前策略是否能正常跑回测结果。</li>
+                <li><strong>OKX</strong>：公共行情、私有账户链路是否可达。</li>
+                <li><strong>Prompt 预览</strong>：模板是否能生成可读结果。</li>
+              </ul>
+            </article>
+            <article class="guide-card">
+              <h3>怎么看结果</h3>
+              <div class="self-check-legend">
+                <span class="legend-chip legend-chip-normal">正常</span>
+                <p>链路可用，可以继续做策略、回测或部署验证。</p>
+                <span class="legend-chip legend-chip-fallback">回退</span>
+                <p>主链路不稳定，但系统还有降级方案，功能通常还能继续使用。</p>
+                <span class="legend-chip legend-chip-failed">失败</span>
+                <p>当前链路不可用，需要先修配置、网络或接口问题。</p>
+              </div>
+            </article>
+            <article class="guide-card">
+              <h3>怎么用</h3>
+              <ol class="guide-list guide-list-ordered">
+                <li>先在策略页选好当前策略。</li>
+                <li>再点上方“运行自检”。</li>
+                <li>先看左侧检查项状态，再看右侧详细输出定位问题。</li>
+              </ol>
+            </article>
+          </div>
+        </div>
+        <div class="subpage-grid">
+          <article class="panel">
+            <div class="panel-head">
+              <h2>检查项状态</h2>
+            </div>
+            <div class="diagnostics-grid self-check-grid" id="self-check-grid">
+              <div class="mini-stat">
+                <span>LLM</span>
+                <strong>--</strong>
+                <small>等待首次自检</small>
+              </div>
+            </div>
+          </article>
+          <article class="panel">
+            <div class="panel-head">
+              <h2>详细输出</h2>
+            </div>
+            <textarea id="self-check-output" class="prompt-editor" readonly>点击“运行自检”，这里会显示本次检查的详细 JSON 结果。建议先看左侧状态卡片，再看这里的 message / detail 来定位问题。</textarea>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <div class="modal-backdrop hidden" id="strategy-modal-backdrop">
+      <div class="modal-panel">
+        <div class="modal-head">
+          <div>
+            <p class="label">策略配置</p>
+            <h3 id="strategy-modal-title">新增策略</h3>
+          </div>
+          <button id="close-strategy-modal-btn" type="button" class="ghost-btn">关闭</button>
+        </div>
+        <form id="create-strategy-form" class="inline-form modal-form">
+          <div class="field-group">
+            <label for="new-strategy-name">策略名称</label>
+            <small>用于在策略列表中识别当前策略，例如 `btc_trend_v1`。</small>
+            <input id="new-strategy-name" type="text" placeholder="策略名称" required />
+          </div>
+          <div class="field-group">
+            <label for="new-strategy-type">策略类型</label>
+            <small>标记策略属于趋势、均值回归、混合或自定义类型。</small>
+            <select id="new-strategy-type">
+              <option value="trend">trend / 趋势</option>
+              <option value="reversal">reversal / 均值回归</option>
+              <option value="hybrid">hybrid / 混合</option>
+              <option value="custom">custom / 自定义</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label for="new-strategy-risk-preference">风险偏好</label>
+            <small>用于帮助 LLM 生成更保守、平衡或激进的建议参数。</small>
+            <select id="new-strategy-risk-preference">
+              <option value="conservative">conservative / 保守</option>
+              <option value="balanced" selected>balanced / 平衡</option>
+              <option value="aggressive">aggressive / 激进</option>
+            </select>
+          </div>
+          <div class="field-group span-2">
+            <label for="new-strategy-symbol">交易对</label>
+            <small>这是策略要监控和交易的标的。`BTC-USDT` 通常表示现货交易对；`BTC-USDT-SWAP` 表示以 USDT 计价的永续合约，`SWAP` 就是永续合约的意思。</small>
+            <input id="new-strategy-symbol" type="text" placeholder="交易对，例如 BTC-USDT-SWAP" value="BTC-USDT-SWAP" required />
+          </div>
+          <div class="field-group span-2">
+            <label for="new-strategy-timeframe">周期</label>
+            <small>分析和回测使用的主时间粒度，例如 `15m`、`1h`、`4h`。</small>
+            <input id="new-strategy-timeframe" type="text" placeholder="周期，例如 1h" value="1h" required />
+          </div>
+          <div class="config-grid">
+            <div class="field-group">
+              <label for="new-strategy-target-capital">目标资金</label>
+              <small>用于约束仓位和风险参数，生成策略建议时会作为核心输入。可直接取当前账户可用资金。</small>
+              <input id="new-strategy-target-capital" type="number" placeholder="目标资金" value="10000" min="100" step="100" required />
+            </div>
+            <div class="field-group">
+              <label for="new-strategy-target-horizon">目标周期（天）</label>
+              <small>你计划持有或运行这套策略的目标周期，LLM 会据此建议时间粒度和风格。</small>
+              <input id="new-strategy-target-horizon" type="number" placeholder="目标周期（天）" value="30" min="1" step="1" required />
+            </div>
+          </div>
+          <div class="config-grid">
+            <div class="field-group">
+              <label for="new-strategy-leverage">杠杆倍数</label>
+              <small>用于控制名义敞口大小，AI 建议和回测会一起考虑。</small>
+              <input id="new-strategy-leverage" type="number" placeholder="杠杆倍数" value="1" min="1" max="50" step="0.1" required />
+            </div>
+            <div class="field-group">
+              <label for="new-strategy-margin-mode">保证金模式</label>
+              <small>执行和回测使用的仓位模式。</small>
+              <select id="new-strategy-margin-mode">
+                <option value="cross">cross / 全仓</option>
+                <option value="isolated">isolated / 逐仓</option>
+              </select>
+            </div>
+          </div>
+          <div class="editor-summary compact">
+            <p id="strategy-capital-hint">当前账户可用资金：--</p>
+          </div>
+          <div class="field-group span-2">
+            <label>默认模板</label>
+            <small>先套用保守 / 平衡 / 激进模板，再继续微调参数会更快。</small>
+            <div class="panel-actions panel-actions-segmented">
+              <button id="apply-template-conservative-btn" type="button" class="action-btn action-btn-secondary">保守模板</button>
+              <button id="apply-template-balanced-btn" type="button" class="action-btn action-btn-secondary">平衡模板</button>
+              <button id="apply-template-aggressive-btn" type="button" class="action-btn action-btn-secondary">激进模板</button>
+            </div>
+            <div class="template-summary-grid" id="strategy-template-summary-grid">
+              <article class="template-summary-card">
+                <strong>保守</strong>
+                <p>等待模板加载...</p>
+              </article>
+              <article class="template-summary-card">
+                <strong>平衡</strong>
+                <p>等待模板加载...</p>
+              </article>
+              <article class="template-summary-card">
+                <strong>激进</strong>
+                <p>等待模板加载...</p>
+              </article>
+            </div>
+          </div>
+          <div class="editor-actions">
+            <button id="use-available-capital-btn" type="button">使用可用资金</button>
+            <button id="suggest-strategy-btn" type="button">快速建议</button>
+            <button id="suggest-strategy-ai-btn" type="button">生成建议（AI）</button>
+          </div>
+          <div class="editor-summary compact">
+            <p id="strategy-ai-diff-summary">AI 改动字段：尚未生成建议</p>
+            <div id="strategy-ai-diff-details" class="strategy-ai-diff-details">
+              <p class="strategy-ai-empty">生成建议后，这里会显示字段变更前后的对比。</p>
+            </div>
+          </div>
+          <div class="config-grid">
+            <div class="field-group">
+              <label for="new-strategy-fast-period">快线周期</label>
+              <small>短周期均线窗口，决定短期趋势反应速度。</small>
+              <input id="new-strategy-fast-period" type="number" placeholder="快线周期" value="7" min="2" required />
+            </div>
+            <div class="field-group">
+              <label for="new-strategy-slow-period">慢线周期</label>
+              <small>长周期均线窗口，用于确认主趋势方向。</small>
+              <input id="new-strategy-slow-period" type="number" placeholder="慢线周期" value="20" min="3" required />
+            </div>
+            <div class="field-group">
+              <label for="new-strategy-rsi-period">RSI 周期</label>
+              <small>动量指标回看长度，影响超买超卖判断灵敏度。</small>
+              <input id="new-strategy-rsi-period" type="number" placeholder="RSI 周期" value="14" min="2" required />
+            </div>
+            <div class="field-group">
+              <label for="new-strategy-take-profit">止盈 %</label>
+              <small>达到该收益率时优先止盈离场。</small>
+              <input id="new-strategy-take-profit" type="number" placeholder="止盈 %" value="8" min="0.1" step="0.1" required />
+            </div>
+            <div class="field-group">
+              <label for="new-strategy-stop-loss">止损 %</label>
+              <small>当亏损达到该阈值时触发保护退出。</small>
+              <input id="new-strategy-stop-loss" type="number" placeholder="止损 %" value="3" min="0.1" step="0.1" required />
+            </div>
+            <div class="field-group">
+              <label for="new-strategy-risk-limit">风险阈值 %</label>
+              <small>控制单笔仓位风险暴露，越低越保守。</small>
+              <input id="new-strategy-risk-limit" type="number" placeholder="风险阈值 %" value="2" min="0.1" step="0.1" required />
+            </div>
+            <div class="field-group">
+              <label for="new-strategy-entry-allocation">单次开仓占比 %</label>
+              <small>每次入场最多使用多少目标资金作为初始开仓。</small>
+              <input id="new-strategy-entry-allocation" type="number" placeholder="单次开仓占比 %" value="25" min="1" max="100" step="0.1" required />
+            </div>
+            <div class="field-group">
+              <label for="new-strategy-max-position">仓位上限 %</label>
+              <small>该策略允许占用的最高总资金比例。</small>
+              <input id="new-strategy-max-position" type="number" placeholder="仓位上限 %" value="50" min="1" max="100" step="0.1" required />
+            </div>
+            <div class="field-group">
+              <label for="new-strategy-max-drawdown">最大回撤限制 %</label>
+              <small>达到该回撤阈值后，回测和执行会倾向停手。</small>
+              <input id="new-strategy-max-drawdown" type="number" placeholder="最大回撤限制 %" value="12" min="1" max="100" step="0.1" required />
+            </div>
+          </div>
+          <div class="field-group span-2">
+            <label for="new-strategy-description">策略说明</label>
+            <small>简述策略思路、适用场景和注意事项，方便后续维护。</small>
+            <textarea id="new-strategy-description" placeholder="策略说明"></textarea>
+          </div>
+          <div class="field-group span-2">
+            <label for="new-strategy-execution-notes">策略执行说明</label>
+            <small>记录建议原因、执行节奏和风控提醒。AI 生成建议时会自动把原因补充到这里。</small>
+            <textarea id="new-strategy-execution-notes" placeholder="策略执行说明"></textarea>
+          </div>
+          <div class="editor-summary compact">
+            <p id="strategy-modal-status">填写策略参数后，点击“新增策略”即可保存；成功后会自动切换到新策略。</p>
+          </div>
+          <div class="editor-actions">
+            <button id="modal-submit-btn" type="submit">新增策略</button>
+            <button id="save-strategy-btn" type="button" style="display: none;">保存当前策略</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="modal-backdrop hidden" id="guide-modal-backdrop">
+      <div class="modal-panel guide-modal-panel">
+        <div class="modal-head">
+          <div>
+            <p class="label">操作说明</p>
+            <h3 id="guide-modal-title">每日检查清单</h3>
+          </div>
+          <button id="close-guide-modal-btn" type="button" class="ghost-btn">关闭</button>
+        </div>
+        <div class="guide-modal-content" id="guide-modal-content"></div>
+        <div class="editor-actions guide-modal-actions">
+          <button id="guide-modal-open-view-btn" type="button">打开对应页面</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-backdrop hidden" id="strategy-ai-overlay">
+      <div class="modal-panel strategy-ai-overlay-panel">
+        <p class="kicker">AI Strategy Suggestion</p>
+        <h3>正在生成 AI 建议</h3>
+        <p id="strategy-ai-overlay-copy">正在基于当前参数生成策略建议，这通常需要 30-60 秒。完成前请不要关闭弹窗或切换其他操作。</p>
+      </div>
+    </div>
+
+    <div class="modal-backdrop hidden" id="prompt-modal-backdrop">
+      <div class="modal-panel">
+        <div class="modal-head">
+          <div>
+            <p class="label">Prompt 模板管理</p>
+            <h3>编辑 LLM 模板</h3>
+          </div>
+          <button id="close-prompt-modal-btn" type="button" class="ghost-btn">关闭</button>
+        </div>
+        <div class="inline-form modal-form">
+          <div class="editor-summary">
+            <p>
+              这里现在按用途拆成三块：
+              1. 聊天模型：负责分析、总结、Agent 决策
+              2. 向量检索 Embeddings：负责把新闻/经验转成向量做 RAG，相当于“检索用编码器”
+              3. OKX：负责真实行情、账户和下单
+            </p>
+          </div>
+          <section class="runtime-section span-2">
+            <div class="runtime-section-head">
+              <div>
+                <p class="label">聊天模型</p>
+                <h4>分析 / 总结 / Agent 决策</h4>
+              </div>
+              <span class="runtime-badge">必配</span>
+            </div>
+            <div class="runtime-grid">
+              <div class="field-group span-2">
+                <label for="runtime-provider-mode">聊天模型接入方式</label>
+                <small>官方 OpenAI 只需要密钥和模型名；第三方兼容接口额外填写 `OPENAI_BASE_URL`。</small>
+                <select id="runtime-provider-mode">
+                  <option value="openai">官方 OpenAI</option>
+                  <option value="compatible">兼容 OpenAI 协议</option>
+                </select>
+              </div>
+              <div class="field-group span-2">
+                <label for="runtime-openai-api-key">OPENAI_API_KEY</label>
+                <small>聊天模型调用密钥。官方 OpenAI 和兼容 OpenAI 协议服务通常都需要它。</small>
+                <input id="runtime-openai-api-key" type="password" placeholder="sk-..." />
+              </div>
+              <div class="field-group">
+                <label for="runtime-llm-model">LLM_MODEL</label>
+                <small>主聊天模型名。比如 `gpt-4.1-mini`、`MiniMax-M2.5`。</small>
+                <input id="runtime-llm-model" type="text" placeholder="例如 gpt-4.1-mini" />
+              </div>
+              <div class="field-group">
+                <label for="runtime-llm-temperature">LLM_TEMPERATURE</label>
+                <small>控制输出发散度。交易分析建议 `0.1 ~ 0.3`。</small>
+                <input id="runtime-llm-temperature" type="number" min="0" max="2" step="0.1" />
+              </div>
+              <div class="field-group span-2 runtime-compatible-only">
+                <label for="runtime-openai-base-url">OPENAI_BASE_URL</label>
+                <small>只在第三方兼容 OpenAI 协议时填写，例如 `https://your-endpoint/v1`。</small>
+                <input id="runtime-openai-base-url" type="text" placeholder="例如 https://your-endpoint/v1" />
+              </div>
+            </div>
+          </section>
+          <section class="runtime-section span-2">
+            <div class="runtime-section-head">
+              <div>
+                <p class="label">向量检索 Embeddings</p>
+                <h4>新闻 / 经验 / RAG 检索</h4>
+              </div>
+              <span class="runtime-badge runtime-badge-optional">可选</span>
+            </div>
+            <div class="editor-summary compact">
+              <p>
+                `embeddings` 是把文本变成向量，供向量库检索相似新闻、历史经验和记忆。
+                不配置也能跑，但 RAG 会降级为内置经验 + 简单关键词匹配，效果会弱一些。
+              </p>
+            </div>
+            <div class="runtime-grid">
+              <div class="field-group span-2">
+                <label for="runtime-embeddings-enabled">是否启用 Embeddings</label>
+                <small>如果你只是先测聊天模型，建议先关闭，避免被向量模型兼容性卡住。</small>
+                <select id="runtime-embeddings-enabled">
+                  <option value="false">关闭，先不用 RAG 向量检索</option>
+                  <option value="true">开启，使用真实向量检索</option>
+                </select>
+              </div>
+              <div class="field-group runtime-embeddings-only">
+                <label for="runtime-embeddings-preset">Embeddings 预设</label>
+                <small>推荐直接选预设。只有你自己接了兼容 embeddings 服务时，才选“自定义兼容模型”。</small>
+                <select id="runtime-embeddings-preset">
+                  <option value="text-embedding-3-small">OpenAI `text-embedding-3-small`（推荐）</option>
+                  <option value="text-embedding-3-large">OpenAI `text-embedding-3-large`</option>
+                  <option value="text-embedding-ada-002">OpenAI `text-embedding-ada-002`（旧版兼容）</option>
+                  <option value="custom">自定义兼容模型</option>
+                </select>
+              </div>
+              <div class="field-group runtime-embeddings-only runtime-embeddings-custom">
+                <label for="runtime-embeddings-model">EMBEDDINGS_MODEL</label>
+                <small>只有选择“自定义兼容模型”时才需要填写，比如某个支持 `/v1/embeddings` 的兼容模型名。</small>
+                <input id="runtime-embeddings-model" type="text" placeholder="例如 text-embedding-3-small" />
+              </div>
+              <div class="field-group runtime-advanced runtime-embeddings-only runtime-embeddings-custom">
+                <label for="runtime-openai-model">OPENAI_MODEL</label>
+                <small>高级兼容项。主要用于历史配置或为 embeddings 侧提供默认模型，不填也可以。</small>
+                <input id="runtime-openai-model" type="text" placeholder="例如 text-embedding-3-small" />
+              </div>
+            </div>
+          </section>
+          <section class="runtime-section span-2">
+            <div class="runtime-section-head">
+              <div>
+                <p class="label">OKX 接入</p>
+                <h4>账户 / 行情 / 下单</h4>
+              </div>
+              <span class="runtime-badge">可联调</span>
+            </div>
+            <div class="runtime-grid">
+          <div class="field-group span-2">
+            <label for="runtime-okx-api-key">OKX_API_KEY</label>
+            <small>OKX API Key，用于账户与交易接口。</small>
+            <input id="runtime-okx-api-key" type="password" />
+          </div>
+          <div class="field-group">
+            <label for="runtime-okx-api-secret">OKX_API_SECRET</label>
+            <small>OKX Secret，签名请求时使用。</small>
+            <input id="runtime-okx-api-secret" type="password" />
+          </div>
+          <div class="field-group">
+            <label for="runtime-okx-passphrase">OKX_PASSPHRASE</label>
+            <small>OKX Passphrase，对应 API 创建时设置的密码。</small>
+            <input id="runtime-okx-passphrase" type="password" />
+          </div>
+          <div class="field-group">
+            <label for="runtime-okx-rest-base">OKX_REST_BASE</label>
+            <small>OKX 接口根地址，默认 `https://www.okx.com`。</small>
+            <input id="runtime-okx-rest-base" type="text" placeholder="https://www.okx.com" />
+          </div>
+          <div class="field-group">
+            <label for="runtime-okx-use-paper">OKX_USE_PAPER</label>
+            <small>开启后请求 OKX 模拟盘环境，更适合联调。</small>
+            <select id="runtime-okx-use-paper">
+              <option value="true">true</option>
+              <option value="false">false</option>
+            </select>
+          </div>
+            </div>
+          </section>
+          <div class="editor-actions">
+            <button id="save-runtime-config-btn" type="button">保存运行参数</button>
+            <button id="test-llm-connection-btn" type="button">测试模型连接</button>
+            <button id="test-okx-public-connection-btn" type="button">测试 OKX 公共行情</button>
+            <button id="test-okx-private-connection-btn" type="button">测试 OKX 私有账户</button>
+          </div>
+          <div class="editor-summary">
+            <p id="runtime-config-status">运行参数状态：未测试</p>
+          </div>
+          <div class="editor-summary">
+            <p id="prompt-template-meta">模板说明：选择模板后，这里会显示它的用途和归属链路。</p>
+          </div>
+          <section class="runtime-section span-2">
+            <div class="runtime-section-head">
+              <div>
+                <p class="label">新闻源配置</p>
+                <h4>可编辑 RSS 源</h4>
+              </div>
+              <span class="runtime-badge runtime-badge-optional">可编辑</span>
+            </div>
+            <div class="editor-summary compact">
+              <p>这里配置新闻源和 RSS 地址，不再写死在后端代码里。格式是 JSON 数组，每项包含 `name` 和 `urls`。</p>
+            </div>
+            <div class="field-group span-2">
+              <label for="news-source-config-editor">新闻源配置 JSON</label>
+              <small>示例：`[{\"name\":\"OKX\",\"urls\":[\"https://www.okx.com/help/rss.xml\"]}]`</small>
+              <textarea id="news-source-config-editor" class="prompt-editor"></textarea>
+            </div>
+            <div class="editor-actions">
+              <button id="save-news-config-btn" type="button">保存新闻源配置</button>
+              <button id="refresh-news-btn" type="button">刷新新闻源</button>
+            </div>
+          </section>
+          <div class="field-group">
+            <label for="prompt-template-select">模板名称</label>
+            <small>当前支持分析链、决策链、日报生成、RAG 摘要四类模板。</small>
+            <select id="prompt-template-select"></select>
+          </div>
+          <div class="field-group">
+            <label for="prompt-template-editor">模板内容</label>
+            <small>这里修改后会直接保存到项目里的 Prompt 文件，下次模型调用时生效。</small>
+            <textarea id="prompt-template-editor" class="prompt-editor"></textarea>
+          </div>
+          <div class="editor-actions">
+            <button id="preview-prompt-template-btn" type="button">预览测试</button>
+          </div>
+          <div class="field-group">
+            <label for="prompt-preview-output">预览结果</label>
+            <small>这里会展示当前模板的即时输出，方便你改完后马上验证。</small>
+            <textarea id="prompt-preview-output" class="prompt-editor" readonly></textarea>
+          </div>
+          <div class="editor-actions">
+            <button id="save-prompt-template-btn" type="button">保存模板</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+  </body>
+</html>

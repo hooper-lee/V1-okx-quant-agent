@@ -1,0 +1,56 @@
+from pydantic import BaseModel, Field
+
+
+class StrategyCreateRequest(BaseModel):
+    name: str = Field(min_length=2, max_length=50)
+    strategy_type: str = Field(default="custom", min_length=2, max_length=30)
+    risk_preference: str = Field(default="balanced", min_length=2, max_length=30)
+    description: str = Field(default="用户创建的自定义策略。", min_length=2, max_length=200)
+    execution_notes: str = Field(default="按策略信号与风控结果执行。", min_length=2, max_length=400)
+    symbol: str = Field(default="BTC-USDT-SWAP", min_length=3, max_length=50)
+    timeframe: str = Field(default="1h", min_length=1, max_length=10)
+    target_capital: float = Field(default=10000.0, gt=0, le=1_000_000_000)
+    target_horizon_days: int = Field(default=30, ge=1, le=3650)
+    leverage: float = Field(default=1.0, ge=1.0, le=50.0)
+    entry_allocation_pct: float = Field(default=25.0, ge=1.0, le=100.0)
+    max_position_pct: float = Field(default=50.0, ge=1.0, le=100.0)
+    max_drawdown_limit_pct: float = Field(default=12.0, ge=1.0, le=100.0)
+    margin_mode: str = Field(default="cross", min_length=2, max_length=20)
+    fast_period: int = Field(default=7, ge=2, le=100)
+    slow_period: int = Field(default=20, ge=3, le=300)
+    rsi_period: int = Field(default=14, ge=2, le=100)
+    take_profit_pct: float = Field(default=8.0, ge=0.1, le=100)
+    stop_loss_pct: float = Field(default=3.0, ge=0.1, le=100)
+    risk_limit_pct: float = Field(default=2.0, ge=0.1, le=100)
+
+
+class StrategyUpdateRequest(BaseModel):
+    strategy_type: str = Field(default="custom", min_length=2, max_length=30)
+    risk_preference: str = Field(default="balanced", min_length=2, max_length=30)
+    description: str = Field(default="用户创建的自定义策略。", min_length=2, max_length=200)
+    execution_notes: str = Field(default="按策略信号与风控结果执行。", min_length=2, max_length=400)
+    symbol: str = Field(default="BTC-USDT-SWAP", min_length=3, max_length=50)
+    timeframe: str = Field(default="1h", min_length=1, max_length=10)
+    target_capital: float = Field(default=10000.0, gt=0, le=1_000_000_000)
+    target_horizon_days: int = Field(default=30, ge=1, le=3650)
+    leverage: float = Field(default=1.0, ge=1.0, le=50.0)
+    entry_allocation_pct: float = Field(default=25.0, ge=1.0, le=100.0)
+    max_position_pct: float = Field(default=50.0, ge=1.0, le=100.0)
+    max_drawdown_limit_pct: float = Field(default=12.0, ge=1.0, le=100.0)
+    margin_mode: str = Field(default="cross", min_length=2, max_length=20)
+    fast_period: int = Field(default=7, ge=2, le=100)
+    slow_period: int = Field(default=20, ge=3, le=300)
+    rsi_period: int = Field(default=14, ge=2, le=100)
+    take_profit_pct: float = Field(default=8.0, ge=0.1, le=100)
+    stop_loss_pct: float = Field(default=3.0, ge=0.1, le=100)
+    risk_limit_pct: float = Field(default=2.0, ge=0.1, le=100)
+
+
+class StrategySuggestionRequest(BaseModel):
+    name: str = Field(default="strategy_draft", min_length=2, max_length=50)
+    strategy_type: str = Field(default="custom", min_length=2, max_length=30)
+    symbol: str = Field(default="BTC-USDT-SWAP", min_length=3, max_length=50)
+    target_capital: float = Field(default=10000.0, gt=0, le=1_000_000_000)
+    target_horizon_days: int = Field(default=30, ge=1, le=3650)
+    risk_preference: str = Field(default="balanced", min_length=2, max_length=30)
+    leverage: float = Field(default=1.0, ge=1.0, le=50.0)

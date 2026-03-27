@@ -1,0 +1,15 @@
+[Unit]
+Description=OKX Quant Agent
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/okx-quant-agent
+EnvironmentFile=/opt/okx-quant-agent/.env
+ExecStart=/opt/okx-quant-agent/.venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8010
+Restart=always
+RestartSec=5
+User=ubuntu
+
+[Install]
+WantedBy=multi-user.target
