@@ -1,0 +1,25 @@
+from pydantic import BaseModel, Field
+
+
+class RuntimeConfigUpdateRequest(BaseModel):
+    app_password: str = Field(default="")
+    app_session_ttl_minutes: int = Field(default=30, ge=1, le=10080)
+    openai_api_key: str = Field(default="")
+    openai_model: str = Field(default="gpt-4.1-mini")
+    llm_model: str = Field(default="gpt-4.1-mini")
+    llm_temperature: float = Field(default=0.1, ge=0, le=2)
+    openai_base_url: str = Field(default="")
+    embeddings_enabled: bool = Field(default=False)
+    embeddings_use_shared_credentials: bool = Field(default=True)
+    embeddings_api_key: str = Field(default="")
+    embeddings_base_url: str = Field(default="")
+    embeddings_model: str = Field(default="text-embedding-3-small")
+    okx_api_key: str = Field(default="")
+    okx_api_secret: str = Field(default="")
+    okx_passphrase: str = Field(default="")
+    okx_rest_base: str = Field(default="https://www.okx.com")
+    okx_use_paper: bool = Field(default=True)
+    okx_adapter: str = Field(default="native")
+    feishu_webhook_url: str = Field(default="")
+    feishu_push_daily_report: bool = Field(default=True)
+    feishu_push_daily_summary: bool = Field(default=True)

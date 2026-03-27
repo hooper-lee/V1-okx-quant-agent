@@ -1,0 +1,17 @@
+.DS_Store
+.pycache/
+__pycache__/
+*.py[cod]
+
+.env
+.venv/
+venv/
+
+.runtime-config.json
+.strategies.json
+.memory-store.json
+
+.codex/
+.chroma/
+app.log
+._*

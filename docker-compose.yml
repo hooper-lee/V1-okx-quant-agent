@@ -1,0 +1,14 @@
+version: "3.9"
+
+services:
+  okx-quant-agent:
+    build: .
+    container_name: okx-quant-agent
+    restart: unless-stopped
+    ports:
+      - "8010:8010"
+    env_file:
+      - .env
+    volumes:
+      - ./.runtime-config.json:/app/.runtime-config.json
+      - ./.strategies.json:/app/.strategies.json

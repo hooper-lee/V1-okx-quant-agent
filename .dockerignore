@@ -1,0 +1,9 @@
+.git
+.gitignore
+.DS_Store
+.codex
+.pycache
+__pycache__
+.runtime-config.json
+.strategies.json
+.env
